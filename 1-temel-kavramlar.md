@@ -27,13 +27,16 @@
 
 **Örnek:**
 ```python
+# Hazır bir tokenizer (kelime bölücü) yüklüyoruz
 from transformers import AutoTokenizer
 
-tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
-tokens = tokenizer.tokenize("Tokenization nedir?")
-print(tokens)  # ['token', '##ization', 'nedir', '?']
-ids = tokenizer.convert_tokens_to_ids(tokens)
-print(ids)  # [19204, 3567, 21490, 1029]
+tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")  # BERT modelinin tokenizer'ını indir
+
+tokens = tokenizer.tokenize("Tokenization nedir?")  # Cümleyi token'lara böl
+print(tokens)  # ['token', '##ization', 'nedir', '?'] -> her parça bir token
+
+ids = tokenizer.convert_tokens_to_ids(tokens)         # Her token'ın ID'sini bul
+print(ids)  # [19204, 3567, 21490, 1029] -> model bu sayıları kullanır
 ```
 
 **İlişkili Terimler:** Vocabulary, Sequence Length, Embedding
@@ -48,13 +51,18 @@ print(ids)  # [19204, 3567, 21490, 1029]
 
 **Örnek:**
 ```python
-# Basit bir embedding katmanı
+# Embedding katmanının nasıl çalıştığını gösteren basit bir örnek
 import torch
-embedding = torch.nn.Embedding(num_embeddings=1000, embedding_dim=128)
-token_id = torch.tensor([42])
-vector = embedding(token_id)
-print(vector.shape)  # torch.Size([1, 128])
-```
+
+embedding = torch.nn.Embedding(
+    num_embeddings=1000,  # Sözlükteki toplam kelime sayısı
+    embedding_dim=128      # Her kelimenin vektör boyutu (kaç sayıdan oluştuğu)
+)
+
+token_id = torch.tensor([42])           # 42 numaralı token'ı seç
+vector = embedding(token_id)            # O token'ın embedding vektörünü al
+print(vector.shape)  # torch.Size([1, 128]) -> 1 token, 128 boyutlu vektör
+
 
 **İlişkili Terimler:** Tokenization, Vocabulary, Vector Database
 
@@ -68,11 +76,12 @@ print(vector.shape)  # torch.Size([1, 128])
 
 **Örnek:**
 ```python
-# Bir tokenizer'ın vocabulary büyüklüğünü görmek
+# Bir modelin tanıdığı toplam kelime/token sayısını görelim
 from transformers import AutoTokenizer
-tokenizer = AutoTokenizer.from_pretrained("gpt2")
-print(len(tokenizer))  # 50257 — GPT-2'nin vocabulary boyutu
-```
+
+tokenizer = AutoTokenizer.from_pretrained("gpt2")  # GPT-2'nin tokenizer'ını yükle
+print(len(tokenizer))  # 50257 -> GPT-2 tam olarak bu kadar farklı token tanıyor
+
 
 **İlişkili Terimler:** Tokenization, One-hot Encoding, Embedding
 
@@ -86,12 +95,13 @@ print(len(tokenizer))  # 50257 — GPT-2'nin vocabulary boyutu
 
 **Örnek:**
 ```python
-# Token sayısını hesaplama
-text = "Uzun bir metin..." * 1000
-tokens = tokenizer.encode(text)
+# Bir metnin kaç token olduğunu ve context window'a sığıp sığmadığını hesaplama
+text = "Uzun bir metin..." * 1000  # Metni 1000 kere tekrarlayarak uzat
+tokens = tokenizer.encode(text)     # Metni token'lara çevir (bunu yapmak model göndermez)
 print(f"Token sayısı: {len(tokens)}")
+# model_max_length değişkeni modelin maksimum token sınırı (örn: BERT için 512)
 print(f"Context window aşıldı mı? {len(tokens) > model_max_length}")
-```
+
 
 **İlişkili Terimler:** Sequence Length, Attention Mechanism, Transformer
 
@@ -105,15 +115,21 @@ print(f"Context window aşıldı mı? {len(tokens) > model_max_length}")
 
 **Örnek:**
 ```python
+# Temperature'ın olasılık dağılımını nasıl değiştirdiğini gösteren fonksiyon
+import torch
 import torch.nn.functional as F
 
-logits = torch.tensor([2.0, 1.0, 0.1, 0.5])
+logits = torch.tensor([2.0, 1.0, 0.1, 0.5])  # 4 farklı token için ham skorlar
 
 def apply_temperature(logits, temp):
+    # Logits / temperature -> softmax ile olasılığa çevir
     return F.softmax(logits / temp, dim=-1)
 
-print(apply_temperature(logits, 0.5))  # Keskin dağılım, yüksek olan daha yüksek
-print(apply_temperature(logits, 1.5))  # Yumuşak dağılım, düşük olan da şanslı
+print(apply_temperature(logits, 0.5))  # Düşük temp: keskin dağılım, en yüksek olan baskın çıkar
+# tensor([0.6151, 0.2262, 0.0680, 0.0907]) -> ilk skor çok daha yüksek
+
+print(apply_temperature(logits, 1.5))  # Yüksek temp: yumuşak dağılım, düşük skorlar da şanslı
+# tensor([0.3453, 0.2336, 0.1865, 0.2346]) -> skorlar birbirine yaklaştı
 ```
 
 **İlişkili Terimler:** Softmax, Logits, Top-p, Top-k
@@ -128,13 +144,23 @@ print(apply_temperature(logits, 1.5))  # Yumuşak dağılım, düşük olan da �
 
 **Örnek:**
 ```python
+# Top-p: kümülatif olasılık eşiğine göre token'ları filtreleme
+import torch
+import torch.nn.functional as F
+
 def top_p_filtering(logits, top_p=0.9):
+    # Logits'leri büyükten küçüğe sırala (indisleriyle birlikte)
     sorted_logits, sorted_indices = torch.sort(logits, descending=True)
+    
+    # Sıralı logits'leri olasılığa çevir ve kümülatif toplam al
     cum_probs = torch.cumsum(F.softmax(sorted_logits, dim=-1), dim=-1)
-    # Kümülatif olasılık top_p'i geçen token'ları sil
+    
+    # Kümülatif olasılığı top_p eşiğini aşan tokenları bul
     sorted_indices_to_remove = cum_probs > top_p
+    # İlk token'ı her zaman tut (en yüksek olasılıklı)
     sorted_indices_to_remove[..., 1:] = sorted_indices_to_remove[..., :-1].clone()
-    sorted_indices_to_remove[..., 0] = 0
+    sorted_indices_to_remove[..., 0] = 0  # İlk token hiç silinmez
+    
     return sorted_indices_to_remove
 ```
 
@@ -150,12 +176,17 @@ def top_p_filtering(logits, top_p=0.9):
 
 **Örnek:**
 ```python
+# Top-k: sadece en yüksek k kadar token'ı tut, diğerlerini sil
+import torch
+
 def top_k_filtering(logits, k=40):
     if k == 0:
-        return logits
-    # k'ıncı en büyük değerin altındaki her şeyi -inf yap
-    values, _ = torch.topk(logits, k)
-    min_values = values[:, -1].unsqueeze(-1)
+        return logits  # Filtreleme yok
+    
+    # En büyük k değeri bul ve onun altındakileri -inf yap
+    values, _ = torch.topk(logits, k)             # En yüksek k skoru al
+    min_values = values[:, -1].unsqueeze(-1)       # k'ıncı en yüksek değer
+    # k'ıncı değerden küçük olan tüm logits'leri -inf yap (softmax'ta 0 olurlar)
     return torch.where(logits < min_values, float('-inf'), logits)
 ```
 
@@ -171,12 +202,17 @@ def top_k_filtering(logits, k=40):
 
 **Örnek:**
 ```python
+# Logits: modelin ham çıktı skorları — henüz olasılığa çevrilmemiş
 import torch
 
-# Modelin çıktısı — vocabulary'deki her kelime için bir skor
+# Vocabulary'deki 6 farklı kelime için modelin ürettiği ham skorlar
+# Pozitif olabilir, negatif olabilir, sınırsızdır
 logits = torch.tensor([-2.3, 5.1, 0.7, -1.2, 3.8, -0.5])
+
+# En yüksek logit hangi index'te? -> argmax
 predicted_idx = torch.argmax(logits).item()
-print(f"En yüksek logit: {logits[predicted_idx].item()}")  # 5.1
+print(f"En yüksek logit: {logits[predicted_idx].item()}")  # 5.1 (2. index)
+# Modelin 'en çok istediği' token bu -> henüz olasılık değil, ham skor
 ```
 
 **İlişkili Terimler:** Softmax, Temperature, Cross-Entropy Loss
@@ -191,13 +227,16 @@ print(f"En yüksek logit: {logits[predicted_idx].item()}")  # 5.1
 
 **Örnek:**
 ```python
+# Softmax: ham logits'leri 0-1 arası olasılıklara çevirir
+import torch
 import torch.nn.functional as F
 
-logits = torch.tensor([2.0, 1.0, 0.1])
-probs = F.softmax(logits, dim=-1)
+logits = torch.tensor([2.0, 1.0, 0.1])  # 3 farklı token için modelin ham skorları
+probs = F.softmax(logits, dim=-1)        # Softmax'ten geçir
 print(probs)  # tensor([0.6590, 0.2424, 0.0986])
-# Toplam 1.0 — gerçek olasılık
-print(probs.sum())  # tensor(1.0)
+# 1. token: %65.9 ihtimal, 2. token: %24.2, 3. token: %9.9
+
+print(probs.sum())  # tensor(1.0) -> tüm olasılıkların toplamı = 1 (her zaman)
 ```
 
 **İlişkili Terimler:** Logits, Temperature, Cross-Entropy Loss, Classification
@@ -212,13 +251,18 @@ print(probs.sum())  # tensor(1.0)
 
 **Örnek:**
 ```python
+# One-hot encoding: kategorik veriyi sadece bir 1 olan vektöre çevir
+import torch
 import torch.nn.functional as F
 
-# 5 kelimelik bir vocabulary, 3. kelimeyi (index 2) one-hot olarak temsil et
+# Diyelim ki 5 kelimelik bir vocabulary'miz var (0-4 arası ID'ler)
 vocab_size = 5
-index = 2
+index = 2  # 3. kelimeyi (index 2) temsil etmek istiyoruz
+
+# One-hot: index 2'de 1, diğerlerinde 0
 one_hot = F.one_hot(torch.tensor(index), num_classes=vocab_size)
 print(one_hot)  # tensor([0, 0, 1, 0, 0])
+# Bu vektör: 3. kelimeyi temsil ediyor, diğer kelimelerle hiçbir benzerliği yok
 ```
 
 **İlişkili Terimler:** Embedding, Vocabulary, Tokenization
@@ -233,13 +277,15 @@ print(one_hot)  # tensor([0, 0, 1, 0, 0])
 
 **Örnek:**
 ```python
-# Farklı uzunluktaki dizileri padding ile eşitleme
+# Farklı uzunluktaki cümleleri aynı boya getirme (padding)
 sequences = ["merhaba", "bugün hava çok güzel", "nasılsın"]
-tokenized = [tokenizer.encode(s) for s in sequences]
-max_len = max(len(t) for t in tokenized)
-# Kısa olanları PAD token (0) ile doldur
+tokenized = [tokenizer.encode(s) for s in sequences]  # Her cümleyi token ID'lerine çevir
+max_len = max(len(t) for t in tokenized)  # En uzun cümle kaç token?
+
+# Kısa olanların sonuna PAD token (0) ekleyerek hepsini eşit boya getir
 padded = [t + [0] * (max_len - len(t)) for t in tokenized]
 print(padded)
+# Örn: [[5, 0, 0], [3, 12, 8, 2, 7], [9, 0, 0]] -> hepsi aynı uzunlukta
 ```
 
 **İlişkili Terimler:** Context Window, Batch Size, Tokenization, Attention
@@ -254,18 +300,19 @@ print(padded)
 
 **Örnek:**
 ```python
-# Farklı batch size'larla bellek kullanımı
+# Batch size'ın bellek kullanımına etkisini hesaplama
 import torch
 
-batch_size = 32
-seq_len = 512
-vocab_size = 50000
+batch_size = 32    # Aynı anda işlenecek örnek sayısı
+seq_len = 512      # Her örneğin token sayısı
+vocab_size = 50000 # Vocabulary büyüklüğü
 
-# Tek batch'in bellekte kapladığı yer (float32)
-tokens_per_batch = batch_size * seq_len
-memory_mb = (tokens_per_batch * 4) / (1024 * 1024)  # 4 bytes per float32
+# Tek bir batch'in bellekte kapladığı alan (4 byte = float32)
+tokens_per_batch = batch_size * seq_len           # Toplam token sayısı
+memory_mb = (tokens_per_batch * 4) / (1024 * 1024)  # Byte -> MB çevir (4 byte/float32)
 print(f"Batch basına token: {tokens_per_batch}")
 print(f"Yaklaşık bellek: {memory_mb:.2f} MB (sadece girdi)")
+# Çıktı: Yaklaşık 0.06 MB/girdi. Ama model katmanları bunun 1000 katı olabilir!
 ```
 
 **İlişkili Terimler:** Sequence Length, GPU Memory, Training Loop, Gradient Accumulation
