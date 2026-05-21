@@ -8,7 +8,7 @@ Her gün düzenli olarak yeni bir kategori eklenir.
 
 | Gün | Kategori | Terim Sayısı | Durum |
 |-----|----------|-------------|-------|
-| 1 | Temel Kavramlar | 12 | ❌ |
+| 1 | Temel Kavramlar | 12 | ✅ |
 | 2 | Model Mimarisi | 14 | ❌ |
 | 3 | Eğitim Teknikleri | 12 | ❌ |
 | 4 | Prompt Mühendisliği | 10 | ❌ |
