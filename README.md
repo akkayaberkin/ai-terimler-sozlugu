@@ -11,7 +11,7 @@ Her gün düzenli olarak yeni bir kategori eklenir.
 | 1 | Temel Kavramlar | 12 | ✅ |
 | 2 | Model Mimarisi | 14 | ✅ |
 | 3 | Eğitim Teknikleri | 12 | ✅ |
-| 4 | Prompt Mühendisliği | 10 | ❌ |
+| 4 | Prompt Mühendisliği | 10 | ✅ |
 | 5 | RAG & Vektör Arama | 12 | ❌ |
 | 6 | Agent & Araçlar | 10 | ❌ |
 | 7 | MLOps & Deployment | 10 | ❌ |
