@@ -13,7 +13,7 @@ Her gün düzenli olarak yeni bir kategori eklenir.
 | 3 | Eğitim Teknikleri | 12 | ✅ |
 | 4 | Prompt Mühendisliği | 10 | ✅ |
 | 5 | RAG & Vektör Arama | 12 | ✅ |
-| 6 | Agent & Araçlar | 10 | ❌ |
+| 6 | Agent & Araçlar | 10 | ✅ |
 | 7 | MLOps & Deployment | 10 | ❌ |
 | 8 | Değerlendirme & Metrikler | 10 | ❌ |
 | 9 | Donanım & Altyapı | 10 | ❌ |
