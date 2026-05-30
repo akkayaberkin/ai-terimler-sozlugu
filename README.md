@@ -15,8 +15,10 @@ Her gün düzenli olarak yeni bir kategori eklenir.
 | 5 | RAG & Vektör Arama | 12 | ✅ |
 | 6 | Agent & Araçlar | 10 | ✅ |
 | 7 | MLOps & Deployment | 10 | ✅ |
-| 8 | Değerlendirme & Metrikler | 10 | ❌ |
-| 9 | Donanım & Altyapı | 10 | ❌ |
+| 8 | Değerlendirme & Metrikler | 10 | ✅ |
+| 9 | Donanım & Altyapı | 10 | ✅ |
+
+🎉 **Sözlük tamamlandı!** Tüm 9 kategori hazır. 100+ terim, her biri Türkçe açıklamalı, örnek kodlu ve ilişkili terimlerle bağlantılı.
 
 ## Format
 
